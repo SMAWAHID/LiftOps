@@ -16,5 +16,14 @@
         "role": "user",
         "tier": "pilot",
         "created_at": "2026-01-29T16:35:23.815052"
+    },
+    {
+        "id": "6631ef02-21c3-4657-a70e-ca902527db9a",
+        "email": "check_restart@google.com",
+        "full_name": "Checker",
+        "password_hash": "3f16492b856254369f77777081f01ab7016405fb50fa8fab33752073467443dc",
+        "role": "user",
+        "tier": "pilot",
+        "created_at": "2026-01-29T16:37:49.376926"
     }
 ]
