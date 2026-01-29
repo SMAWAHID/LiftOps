@@ -110,6 +110,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: user.email || 'guest@example.com' }) // Fallback for guest
             });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.detail || `Server Error: ${res.status}`);
+            }
+
             const { clientSecret } = await res.json();
 
             const appearance = { theme: 'night', labels: 'floating' };

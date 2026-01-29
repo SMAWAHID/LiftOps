@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from backend.app.schemas.api import PipelineRequest, PipelineResponse, ErrorResponse
-from backend.app.schemas.auth import User, UserCreate, LoginRequest
+from backend.app.schemas.auth import User, UserCreate, LoginRequest, SocialLoginRequest
 from backend.app.core.users import user_repo
 from backend.app.agents.router import RouterAgent
 from backend.app.agents.planner import PlannerAgent
@@ -92,6 +92,34 @@ async def get_current_user(token: str):
         raise HTTPException(status_code=404, detail="User not found")
     except Exception:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
+
+
+@app.post("/api/social-login")
+async def social_login(req: SocialLoginRequest):
+    # 1. Check if user exists
+    user = user_repo.get_by_email(req.email)
+    
+    if not user:
+        # 2. Register if new. Generate random password for social users.
+        try:
+            random_pw = str(uuid.uuid4())
+            new_user_in = UserCreate(
+                email=req.email, 
+                full_name=req.full_name or "Social User", 
+                password=random_pw
+            )
+            user = user_repo.create_user(new_user_in)
+        except ValueError as e:
+            # Race condition or other error
+            raise HTTPException(status_code=400, detail=str(e))
+            
+    # 3. Create Session Token
+    token = f"jwt-mock-{user['id']}"
+    return {
+        "access_token": token, 
+        "token_type": "bearer", 
+        "user": user
+    }
 
 
 @app.get("/api/config/stripe-key")

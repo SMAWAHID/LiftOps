@@ -7,5 +7,14 @@
         "role": "user",
         "tier": "commander",
         "created_at": "2026-01-16T17:21:03.074864"
+    },
+    {
+        "id": "1a835c81-4677-4117-b58e-53851d52c4e5",
+        "email": "test_verification@google.com",
+        "full_name": "Test User",
+        "password_hash": "32ddd6baa8d7772dd04ab788a40bbc5a13766f5f0a1d032b101a7e2224f1fd06",
+        "role": "user",
+        "tier": "pilot",
+        "created_at": "2026-01-29T16:35:23.815052"
     }
 ]

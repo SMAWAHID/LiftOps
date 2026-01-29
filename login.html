@@ -270,19 +270,27 @@
             }
         }
 
-        function mockSocialLogin(provider) {
-            alert(`Redirecting to ${provider}... (Mock Success)`);
-            // Simulating a successful social login for a random new user
-            const mockUser = {
-                id: 'social-' + Date.now(),
-                email: `user_${Date.now()}@${provider.toLowerCase()}.com`,
-                role: 'user',
-                tier: 'pilot'
-            };
-            localStorage.setItem('authToken', 'mock-social-token');
-            localStorage.setItem('liftops_user', JSON.stringify(mockUser));
-            localStorage.setItem('liftops_tier', mockUser.tier);
-            window.location.href = '/index.html';
+        async function mockSocialLogin(provider) {
+            // Simulator for "Redirecting to Provider..."
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Connecting...`;
+
+            // Generate a consistent mock identity for demo
+            // In a real app, this data comes from the OAuth provider callback
+            const ts = Date.now();
+            const email = `user_${ts}@${provider.toLowerCase()}.com`;
+            const name = `${provider} User`;
+
+            // Call backend to create session
+            await handleAuth('/api/social-login', {
+                provider: provider,
+                email: email,
+                full_name: name
+            });
+
+            // Restore button text if it fails (handleAuth redirects on success)
+            btn.innerHTML = originalText;
         }
     </script>
 </body>

@@ -21,3 +21,8 @@ class Token(BaseModel):
 class LoginRequest(BaseModel):
     username: str # email
     password: str
+
+class SocialLoginRequest(BaseModel):
+    provider: str
+    email: str
+    full_name: str | None = None
