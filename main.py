@@ -1,6 +1,9 @@
 import uuid
 import logging
-from fastapi import FastAPI, HTTPException
+import os
+import stripe
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -16,6 +19,14 @@ from backend.app.core.history import HistoryRepository
 # Setup Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("antigravity")
+
+# Load environment variables
+load_dotenv()
+
+# Stripe Setup
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_PLACEHOLDER")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "pk_test_PLACEHOLDER")
+stripe.api_key = STRIPE_SECRET_KEY
 
 app = FastAPI(title="Antigravity Backend")
 
@@ -83,17 +94,62 @@ async def get_current_user(token: str):
         raise HTTPException(status_code=401, detail="Could not validate credentials")
 
 
-@app.post("/api/upgrade")
-async def upgrade_tier(request: dict):
-    # Simulated Webhook from Stripe
-    email = request.get("email")
-    if not email:
-         raise HTTPException(status_code=400, detail="Email required")
-    
-    updated_user = user_repo.upgrade_tier(email, "commander")
-    if not updated_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"status": "success", "user": updated_user}
+@app.get("/api/config/stripe-key")
+async def get_stripe_key():
+    return {"publishableKey": STRIPE_PUBLISHABLE_KEY}
+
+
+class PaymentIntentRequest(BaseModel):
+    items: list = []
+    email: str
+
+
+@app.post("/api/create-payment-intent")
+async def create_payment_intent(request: PaymentIntentRequest):
+    try:
+        # Calculate order amount (Commander Plan - $99.00)
+        # In a real app, look up price by item ID
+        amount = 9900  # cents
+
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency="usd",
+            automatic_payment_methods={"enabled": True},
+            metadata={"email": request.email, "target_tier": "commander"},
+        )
+        return {"clientSecret": intent.client_secret}
+    except Exception as e:
+        logger.error(f"Stripe Error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/verify-payment")
+async def verify_payment(data: dict = Body(...)):
+    payment_intent_id = data.get("paymentIntentId")
+    email = data.get("email") # fallback if not in metadata
+
+    if not payment_intent_id:
+        raise HTTPException(status_code=400, detail="Missing paymentIntentId")
+
+    try:
+        intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+        if intent.status == "succeeded":
+            # Payment success, upgrade user
+            user_email = intent.metadata.get("email") or email
+            if not user_email:
+                 raise HTTPException(status_code=400, detail="Could not identify user email from payment")
+            
+            updated_user = user_repo.upgrade_tier(user_email, "commander")
+            if not updated_user:
+                # If user not found, maybe create or log error? For now 404.
+                raise HTTPException(status_code=404, detail="User found for upgrade")
+                
+            return {"status": "success", "user": updated_user}
+        else:
+            return {"status": "pending", "details": f"Payment status is {intent.status}"}
+            
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/api/antigravity/run", response_model=PipelineResponse)

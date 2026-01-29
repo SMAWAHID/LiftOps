@@ -12,6 +12,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 
 <body>
@@ -187,26 +188,17 @@
                         <div class="price">$99<span>/mo</span></div>
                     </div>
 
-                    <div id="payment-form">
-                        <div class="input-group">
-                            <label>Card Number</label>
-                            <input type="text" id="cc-number" placeholder="0000 0000 0000 0000" maxlength="19">
-                            <i class="fab fa-cc-visa card-icon"></i>
+                    <form id="payment-form">
+                        <div id="payment-element">
+                            <!-- Stripe Payment Element will be inserted here -->
                         </div>
-                        <div class="row">
-                            <div class="input-group">
-                                <label>Expiry</label>
-                                <input type="text" id="cc-expiry" placeholder="MM/YY" maxlength="5">
-                            </div>
-                            <div class="input-group">
-                                <label>CVC</label>
-                                <input type="text" id="cc-cvc" placeholder="123" maxlength="3">
-                            </div>
-                        </div>
-                        <button class="btn-primary full-width" id="upgrade-btn" style="margin-top: 16px;">
-                            Pay $99.00
+                        <button class="btn-primary full-width" id="submit-payment-btn" style="margin-top: 16px;">
+                            <div class="spinner hidden" id="spinner"></div>
+                            <span id="button-text">Pay $99.00</span>
                         </button>
-                    </div>
+                        <div id="payment-message" class="hidden"
+                            style="color: #ff4444; margin-top: 10px; font-size: 0.9rem;"></div>
+                    </form>
 
                     <p class="note">Secured by Stripe (Mock). Enter fake data.</p>
                 </div>

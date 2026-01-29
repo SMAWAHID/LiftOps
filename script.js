@@ -30,10 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Payment UI
     const paywallModal = document.getElementById('paywall-modal');
     const closePaywallBtn = document.getElementById('close-paywall');
-    const upgradeBtn = document.getElementById('upgrade-btn');
-    const ccInput = document.getElementById('cc-number');
-    const expInput = document.getElementById('cc-expiry');
-    const cvcInput = document.getElementById('cc-cvc');
+    const submitPaymentBtn = document.getElementById('submit-payment-btn');
+    const paymentMessage = document.getElementById('payment-message');
+    let stripe;
+    let elements;
+    let isPaymentElementLoaded = false;
 
     // 3. Navigation
     function toggleView(viewName) {
@@ -72,7 +73,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentTier === 'commander') {
                 toggleView('settings');
             } else {
-                if (paywallModal) paywallModal.classList.remove('hidden');
+                if (paywallModal) {
+                    paywallModal.classList.remove('hidden');
+                    loadPaymentForm();
+                }
             }
         });
     }
@@ -83,64 +87,124 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 4. Payment Logic
-    // Input Formatting
-    if (ccInput) {
-        ccInput.addEventListener('input', (e) => {
-            let v = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-            let parts = [];
-            for (let i = 0; i < v.length; i += 4) parts.push(v.substring(i, i + 4));
-            if (parts.length) e.target.value = parts.join(' ');
+    // 4. Payment Logic (Stripe)
+
+    // Initialize Stripe
+    async function initStripe() {
+        try {
+            const res = await fetch('/api/config/stripe-key');
+            const { publishableKey } = await res.json();
+            stripe = Stripe(publishableKey);
+        } catch (err) {
+            console.error('Failed to load Stripe key', err);
+        }
+    }
+    initStripe();
+
+    async function loadPaymentForm() {
+        if (isPaymentElementLoaded) return;
+
+        try {
+            const res = await fetch('/api/create-payment-intent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email || 'guest@example.com' }) // Fallback for guest
+            });
+            const { clientSecret } = await res.json();
+
+            const appearance = { theme: 'night', labels: 'floating' };
+            elements = stripe.elements({ appearance, clientSecret });
+
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+            isPaymentElementLoaded = true;
+        } catch (e) {
+            console.error("Error loading payment form", e);
+            if (paymentMessage) {
+                paymentMessage.textContent = "Failed to load payment form. Check server logs.";
+                paymentMessage.classList.remove('hidden');
+            }
+        }
+    }
+
+    if (submitPaymentBtn) {
+        submitPaymentBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!stripe || !elements) return;
+
+            setLoading(true);
+
+            const { error, paymentIntent } = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                    // Make sure to change this to your payment completion page
+                    return_url: window.location.href, // For redirects, but we use redirect: if_required
+                },
+                redirect: 'if_required'
+            });
+
+            if (error) {
+                showMessage(error.message);
+                setLoading(false);
+            } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+                // Verify with backend and upgrade
+                await verifyAndUpgrade(paymentIntent.id);
+            } else {
+                showMessage("Unexpected payment status.");
+                setLoading(false);
+            }
         });
     }
 
-    if (upgradeBtn) {
-        upgradeBtn.addEventListener('click', async () => {
-            const cc = ccInput.value.replace(/\s/g, '');
+    async function verifyAndUpgrade(paymentIntentId) {
+        try {
+            const res = await fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    paymentIntentId,
+                    email: user.email || 'guest@example.com'
+                })
+            });
 
-            // Basic Validation
-            if (cc.length < 16) {
-                alert("Invalid Card Number");
-                return;
-            }
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                showMessage("Payment Success! Upgrading...", false);
+                // Update State
+                currentTier = 'commander';
+                localStorage.setItem('liftops_tier', 'commander');
 
-            const originalText = upgradeBtn.textContent;
-            upgradeBtn.textContent = 'Contacting Bank...';
-            upgradeBtn.disabled = true;
-
-            try {
-                // Simulate Processing
-                await new Promise(r => setTimeout(r, 1500));
-
-                // Call Backend Upgrade
-                const res = await fetch('/api/upgrade', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user.email })
-                });
-
-                if (res.ok) {
-                    upgradeBtn.textContent = 'Payment Approved!';
-                    upgradeBtn.style.background = '#10b981';
-
-                    await new Promise(r => setTimeout(r, 1000));
-
-                    // Update State
-                    currentTier = 'commander';
-                    localStorage.setItem('liftops_tier', 'commander');
-
-                    // Dismiss & Redirect
+                setTimeout(() => {
                     if (paywallModal) paywallModal.classList.add('hidden');
                     toggleView('settings');
-                } else {
-                    throw new Error("Payment Failed");
-                }
-            } catch (err) {
-                alert("Payment Declined: " + err.message);
-                upgradeBtn.textContent = originalText;
-                upgradeBtn.disabled = false;
+                    setLoading(false);
+                }, 1500);
+            } else {
+                throw new Error(data.details || "Upgrade failed");
             }
-        });
+        } catch (err) {
+            showMessage("Payment succeeded but upgrade failed: " + err.message);
+            setLoading(false);
+        }
+    }
+
+    function showMessage(messageText, isError = true) {
+        if (!paymentMessage) return;
+        paymentMessage.classList.remove('hidden');
+        paymentMessage.textContent = messageText;
+        paymentMessage.style.color = isError ? '#ff4444' : '#10b981';
+    }
+
+    function setLoading(isLoading) {
+        if (isLoading) {
+            submitPaymentBtn.disabled = true;
+            document.querySelector('#spinner').classList.remove('hidden');
+            document.querySelector('#button-text').classList.add('hidden');
+        } else {
+            submitPaymentBtn.disabled = false;
+            document.querySelector('#spinner').classList.add('hidden');
+            document.querySelector('#button-text').classList.remove('hidden');
+        }
     }
 
     // 5. Dashboard Pipeline Logic (Standard)
