@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiftOps | Agent Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="brand">
+                <img src="liftops_logo.png" alt="LiftOps" class="logo-icon" style="background: none; box-shadow: none;">
+                <h1>LiftOps</h1>
+            </div>
+            <nav>
+                <a href="#" id="nav-dashboard" class="active">Mission Control</a>
+                <a href="#" id="nav-logs">Logs</a>
+                <a href="#" id="nav-settings">Settings</a>
+            </nav>
+            <div class="status-indicator">
+                <span class="dot online"></span> System Online
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header>
+                <h2>Agent Pipeline Diagnostic</h2>
+                <div class="user-profile">
+                    <span>Admin</span>
+                    <div class="avatar">A</div>
+                </div>
+            </header>
+
+            <!-- Input Section -->
+            <section class="input-section glass-panel">
+                <textarea id="user-input"
+                    placeholder="Initiate sequence... (e.g., 'Verify database schema integrity')"></textarea>
+                <div class="action-bar">
+                    <button id="submit-btn" class="btn-primary">
+                        <span class="btn-text">Execute Pipeline</span>
+                        <span class="btn-icon">→</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Pipeline Output Grid -->
+            <section class="pipeline-grid">
+                <!-- Router Agent -->
+                <div class="agent-card glass-panel" id="card-router">
+                    <div class="card-header">
+                        <div class="agent-icon router-color">R</div>
+                        <h3>Router Agent</h3>
+                        <span class="status-badge">Idle</span>
+                    </div>
+                    <div class="card-body">
+                        <pre id="router-output" class="json-viewer">// Waiting for input...</pre>
+                    </div>
+                </div>
+
+                <!-- Planner Agent -->
+                <div class="agent-card glass-panel" id="card-planner">
+                    <div class="card-header">
+                        <div class="agent-icon planner-color">P</div>
+                        <h3>Planner Agent</h3>
+                        <span class="status-badge">Idle</span>
+                    </div>
+                    <div class="card-body">
+                        <pre id="planner-output" class="json-viewer">// Waiting for router...</pre>
+                    </div>
+                </div>
+
+                <!-- Executor Agent -->
+                <div class="agent-card glass-panel" id="card-executor">
+                    <div class="card-header">
+                        <div class="agent-icon executor-color">E</div>
+                        <h3>Executor Agent</h3>
+                        <span class="status-badge">Idle</span>
+                    </div>
+                    <div class="card-body">
+                        <pre id="executor-output" class="json-viewer">// Waiting for plan...</pre>
+                    </div>
+                </div>
+
+                <!-- Validator Agent -->
+                <div class="agent-card glass-panel" id="card-validator">
+                    <div class="card-header">
+                        <div class="agent-icon validator-color">V</div>
+                        <h3>Validator Agent</h3>
+                        <span class="status-badge">Idle</span>
+                    </div>
+                    <div class="card-body">
+                        <pre id="validator-output" class="json-viewer">// Waiting for execution...</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Section (Hidden by default) -->
+            <section id="logs-section" class="glass-panel hidden">
+                <div class="logs-header">
+                    <h3>Audit Logs</h3>
+                    <button class="btn-sm" id="refresh-logs">↻ Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table class="logs-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Time</th>
+                                <th>Request ID</th>
+                                <th>Intent</th>
+                                <th>Safety</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Settings Section (Locked by default) -->
+            <section id="settings-section" class="glass-panel hidden">
+                <div class="logs-header">
+                    <h3>System Configuration</h3>
+                    <button class="btn-sm" id="save-settings">Save Changes</button>
+                </div>
+                <div class="settings-body" style="padding: 24px;">
+                    <!-- AI Model -->
+                    <div class="setting-group" style="margin-bottom: 24px;">
+                        <label style="display:block; margin-bottom:8px; color:var(--text-secondary);">AI Model</label>
+                        <select id="model-select"
+                            style="width:100%; padding:10px; background:rgba(0,0,0,0.2); border:1px solid var(--border-color); color:white; border-radius:6px;">
+                            <option value="gpt-4">GPT-4 Omni (Cloud)</option>
+                            <option value="claude-3">Claude 3.5 Sonnet (Cloud)</option>
+                            <option value="llama-3">Llama 3 (Local)</option>
+                        </select>
+                    </div>
+
+                    <!-- Safety Slider -->
+                    <div class="setting-group" style="margin-bottom: 24px;">
+                        <label style="display:block; margin-bottom:8px; color:var(--text-secondary);">Safety Sensitivity
+                            (Validator)</label>
+                        <input type="range" min="1" max="10" value="8" style="width:100%;">
+                        <div
+                            style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-secondary); margin-top:4px;">
+                            <span>Permissive</span>
+                            <span>Strict</span>
+                        </div>
+                    </div>
+
+                    <!-- Custom Blocklist -->
+                    <div class="setting-group">
+                        <label style="display:block; margin-bottom:8px; color:var(--text-secondary);">Forbidden Keywords
+                            (Comma separated)</label>
+                        <textarea id="blocklist" style="height:100px; font-family:var(--font-code);"
+                            placeholder="e.g. drop, delete, shutdown, secret_project"></textarea>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Paywall Modal -->
+    <div id="paywall-modal" class="modal-overlay hidden">
+        <div class="modal-card glass-panel">
+            <div class="modal-header">
+                <h2>Upgrade to Commander</h2>
+                <button class="close-btn" id="close-paywall">×</button>
+            </div>
+            <div class="modal-body">
+                <p class="subtitle">Unlock the full power of Antigravity.</p>
+                <div class="pricing-tier">
+                    <div class="tier-header">
+                        <h3>Commander Plan</h3>
+                        <div class="price">$99<span>/mo</span></div>
+                    </div>
+
+                    <div id="payment-form">
+                        <div class="input-group">
+                            <label>Card Number</label>
+                            <input type="text" id="cc-number" placeholder="0000 0000 0000 0000" maxlength="19">
+                            <i class="fab fa-cc-visa card-icon"></i>
+                        </div>
+                        <div class="row">
+                            <div class="input-group">
+                                <label>Expiry</label>
+                                <input type="text" id="cc-expiry" placeholder="MM/YY" maxlength="5">
+                            </div>
+                            <div class="input-group">
+                                <label>CVC</label>
+                                <input type="text" id="cc-cvc" placeholder="123" maxlength="3">
+                            </div>
+                        </div>
+                        <button class="btn-primary full-width" id="upgrade-btn" style="margin-top: 16px;">
+                            Pay $99.00
+                        </button>
+                    </div>
+
+                    <p class="note">Secured by Stripe (Mock). Enter fake data.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
