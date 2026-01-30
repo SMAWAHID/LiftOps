@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  liftops:
+    image: syedmawahid/liftops:latest
+    container_name: liftops-app
+    restart: unless-stopped
+    ports:
+      - "8005:8005"
+    env_file:
+      - .env
+    volumes:
+      - ./users.json:/app/users.json
+      - ./audit_log.json:/app/audit_log.json
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

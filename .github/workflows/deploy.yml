@@ -1,0 +1,54 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Build and push Docker image
+      run: |
+        docker build -t syedmawahid/liftops:latest .
+        docker push syedmawahid/liftops:latest
+    
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd ~/LiftOps
+          
+          # Pull latest code
+          git pull origin main
+          
+          # Update .env file
+          echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" > .env
+          echo "STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}" >> .env
+          
+          # Pull latest Docker image
+          docker pull syedmawahid/liftops:latest
+          
+          # Update docker-compose to use latest image
+          sed -i 's|build: .|image: syedmawahid/liftops:latest|' docker-compose.yml
+          
+          # Restart containers
+          docker-compose down
+          docker-compose up -d
+          
+          # Clean up old images
+          docker image prune -af
