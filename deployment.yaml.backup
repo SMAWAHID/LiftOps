@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: liftops-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: liftops
+  template:
+    metadata:
+      labels:
+        app: liftops
+    spec:
+      containers:
+      - name: liftops
+        image: username/repository:tag  # Replace with your image name
+        ports:
+        - containerPort: 8005  # Make sure this matches the port in your Dockerfile
+

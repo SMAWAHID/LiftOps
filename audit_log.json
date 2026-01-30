@@ -1,5 +1,77 @@
 [
   {
+    "request_id": "de26feaf-fd58-448c-bdf2-9d4f54a7910c",
+    "router": {
+      "intent": "Processed: remove kubernetes error...",
+      "classification": "task",
+      "confidence": "high"
+    },
+    "planner": {
+      "goal": "Fulfil intent: Processed: remove kubernetes error...",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "Execute: Processed: remove kubernetes error...",
+          "requires_clarification": false
+        }
+      ],
+      "blocking_questions": []
+    },
+    "executor": {
+      "execution_type": "task",
+      "status": "simulated",
+      "output": {
+        "result": "Success",
+        "goal": "Fulfil intent: Processed: remove kubernetes error...",
+        "steps_processsed": 1,
+        "message": "Stub execution completed."
+      }
+    },
+    "validator": {
+      "valid": true,
+      "issues": [],
+      "recommended_action": "accept"
+    },
+    "error": null,
+    "saved_at": "2026-01-30T13:40:02.084025"
+  },
+  {
+    "request_id": "1382aff7-1aa5-4814-85f5-c595996f70d6",
+    "router": {
+      "intent": "Processed: kubernetes error...",
+      "classification": "task",
+      "confidence": "high"
+    },
+    "planner": {
+      "goal": "Fulfil intent: Processed: kubernetes error...",
+      "steps": [
+        {
+          "step_number": 1,
+          "description": "Execute: Processed: kubernetes error...",
+          "requires_clarification": false
+        }
+      ],
+      "blocking_questions": []
+    },
+    "executor": {
+      "execution_type": "task",
+      "status": "simulated",
+      "output": {
+        "result": "Success",
+        "goal": "Fulfil intent: Processed: kubernetes error...",
+        "steps_processsed": 1,
+        "message": "Stub execution completed."
+      }
+    },
+    "validator": {
+      "valid": true,
+      "issues": [],
+      "recommended_action": "accept"
+    },
+    "error": null,
+    "saved_at": "2026-01-30T13:38:58.107035"
+  },
+  {
     "request_id": "9861ae4e-fc45-486e-9c78-cb2e3812c594",
     "router": {
       "intent": "Processed: HTTP ERROR 502...",

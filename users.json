@@ -34,5 +34,14 @@
         "role": "user",
         "tier": "commander",
         "created_at": "2026-01-30T15:05:32.256435"
+    },
+    {
+        "id": "995c0660-f4d3-4f42-8e16-de2008e05268",
+        "email": "hafizmawahid2775@gmail.com",
+        "full_name": "Syed Mawahid",
+        "password_hash": "67e1fbe9e0b6456905ed34e038fbd9373b9fab5e18a4039ac7601af58bb7c258",
+        "role": "user",
+        "tier": "pilot",
+        "created_at": "2026-01-30T13:09:03.448273"
     }
 ]
