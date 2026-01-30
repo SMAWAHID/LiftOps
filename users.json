@@ -25,5 +25,14 @@
         "role": "user",
         "tier": "pilot",
         "created_at": "2026-01-29T16:37:49.376926"
+    },
+    {
+        "id": "b505b85b-ba0a-4b6e-8ac7-a1ada1a20edb",
+        "email": "user_1769767532196@google.com",
+        "full_name": "Google User",
+        "password_hash": "b49ac8516f6b56a778c05a0e5587bb1181d68382fa6830edf451a1d6e3f5303d",
+        "role": "user",
+        "tier": "commander",
+        "created_at": "2026-01-30T15:05:32.256435"
     }
 ]
